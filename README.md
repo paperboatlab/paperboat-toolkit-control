@@ -2,13 +2,25 @@
 
 The optional control toolkit for [Paperboat](https://github.com/paperboatlab/paperboat).
 
-It adds per-step Signal blocks that use the optimization toolkit's `Workspace`:
+It carries the clock dynamics that used to be built into the engine:
+
+| Block | What it does |
+| --- | --- |
+| `control/pid` | `e` → `u`; gains `kp`, `ki`, `kd` |
+| `control/integrator` | `u` → `y`; `initial`, optional `solver` |
+| `control/lag` | first-order lag `u` → `y`; `tau`, optional `solver` |
+| `control/delay` | its input `steps` clock steps ago; `initial` |
+
+`integrator`, `lag` and `delay` have no direct feedthrough, so a feedback loop may pass through
+them. A vector signal gets one state per element.
+
+It also adds per-step Signal blocks that use the optimization toolkit's `Workspace`:
 
 | Block | Problem |
 | --- | --- |
-| `mpc/mpc` | a condensed QP from `A`, `B`, `Q`, `R`, `N` and `u` bounds |
-| `mpc/lp_step` | an LP every clock step |
-| `mpc/nmpc` | an NLP every clock step (needs Ipopt) |
+| `control/mpc` | a condensed QP from `A`, `B`, `Q`, `R`, `N` and `u` bounds |
+| `control/lp_step` | an LP every clock step |
+| `control/nmpc` | an NLP every clock step (needs Ipopt) |
 
 They are `feedthrough = false`: `outputs()` returns the last `u`; `step()` reads `y`/`ref` and
 solves for the next one. Outputs are `u`, `status`, `iterations` and `solve_time`. A `max_time`
@@ -21,14 +33,14 @@ The model is a JSON file on the block:
 ```
 
 `lp_step` takes the optimization LP form (`c`, `A`, `l`, `u`); `nmpc` takes the NLP form
-(`variables`, `objective`, `constraints`). The mpc toolkit links
+(`variables`, `objective`, `constraints`). The control toolkit links
 `paperboat::toolkit_optimization`; install both toolkits.
 
 ## Install
 
 ```sh
 paperboat toolkit install optimization --repo https://github.com/paperboatlab/paperboat-toolkit-optimization.git
-paperboat toolkit install mpc --repo https://github.com/paperboatlab/paperboat-toolkit-control.git
+paperboat toolkit install control --repo https://github.com/paperboatlab/paperboat-toolkit-control.git
 ```
 
 Then in the backend's `main`:
@@ -36,7 +48,7 @@ Then in the backend's `main`:
 ```cpp
 tk::Registry r = tk::builtins();
 tk::optimization::register_optimization(r);
-tk::mpc::register_mpc(r);
+tk::control::register_control(r);
 ```
 
-and import `"optimization"` and `"mpc"` in `descriptor.toml`.
+and import `"optimization"` and `"control"` in `descriptor.toml`.

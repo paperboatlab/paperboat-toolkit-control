@@ -13,10 +13,17 @@
 #include <nlohmann/json.hpp>
 
 #include "paperboat/toolkit/block.hpp"
-#include "paperboat/toolkit/mpc.hpp"
+#include "paperboat/toolkit/control.hpp"
 #include "paperboat/toolkit/optimization.hpp"
 
-namespace paperboat::toolkit::mpc {
+namespace paperboat::toolkit::control {
+
+// The built-in control blocks, moved here from the engine's control package.
+void add_pid(Registry&);
+void add_integrator(Registry&);
+void add_lag(Registry&);
+void add_delay(Registry&);
+
 namespace {
 
 using optimization::Matrix;
@@ -302,8 +309,9 @@ class NmpcBlock final : public Block {
 
 Template mpc_template() {
   Template t;
-  t.name = "mpc/mpc";
+  t.name = "control/mpc";
   t.def.type = "mpc";
+  t.def.flows = {"signal"};
   t.def.label = "MPC";
   t.def.kind = Kind::Function;
   t.def.inputs = {numbers_port("y"), numbers_port("ref"), numbers_port("x0")};
@@ -321,8 +329,9 @@ Template mpc_template() {
 
 Template lp_step_template() {
   Template t;
-  t.name = "mpc/lp_step";
+  t.name = "control/lp_step";
   t.def.type = "lp_step";
+  t.def.flows = {"signal"};
   t.def.label = "Dynamic LP";
   t.def.kind = Kind::Function;
   t.def.inputs = {numbers_port("y"), numbers_port("ref")};
@@ -340,8 +349,9 @@ Template lp_step_template() {
 
 Template nmpc_template() {
   Template t;
-  t.name = "mpc/nmpc";
+  t.name = "control/nmpc";
   t.def.type = "nmpc";
+  t.def.flows = {"signal"};
   t.def.label = "NMPC";
   t.def.kind = Kind::Function;
   t.def.inputs = {numbers_port("y"), numbers_port("ref"), numbers_port("x0")};
@@ -360,10 +370,15 @@ Template nmpc_template() {
 
 }  // namespace
 
-void register_mpc(Registry& registry) {
+void register_control(Registry& registry) {
+  add_pid(registry);
+  add_integrator(registry);
+  add_lag(registry);
+  add_delay(registry);
+  registry.default_flows("control", {"signal", "step"});
   registry.add(mpc_template());
   registry.add(lp_step_template());
   registry.add(nmpc_template());
 }
 
-}  // namespace paperboat::toolkit::mpc
+}  // namespace paperboat::toolkit::control

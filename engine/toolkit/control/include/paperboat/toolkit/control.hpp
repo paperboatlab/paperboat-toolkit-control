@@ -6,12 +6,12 @@
 //
 //   tk::Registry r = tk::builtins();
 //   tk::optimization::register_optimization(r);
-//   tk::mpc::register_mpc(r);
+//   tk::control::register_control(r);
 
 #include "paperboat/toolkit/registry.hpp"
 
-namespace paperboat::toolkit::mpc {
+namespace paperboat::toolkit::control {
 
-void register_mpc(Registry& registry);
+void register_control(Registry& registry);
 
-}  // namespace paperboat::toolkit::mpc
+}  // namespace paperboat::toolkit::control

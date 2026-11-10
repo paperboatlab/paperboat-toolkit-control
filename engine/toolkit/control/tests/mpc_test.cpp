@@ -5,7 +5,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "paperboat/toolkit/block.hpp"
-#include "paperboat/toolkit/mpc.hpp"
+#include "paperboat/toolkit/control.hpp"
 
 namespace tk = paperboat::toolkit;
 
@@ -18,8 +18,8 @@ TEST_CASE("MPC solves a one-state QP every step") {
   }
 
   tk::Registry registry = tk::builtins();
-  tk::mpc::register_mpc(registry);
-  const tk::Template* t = registry.find("mpc/mpc");
+  tk::control::register_control(registry);
+  const tk::Template* t = registry.find("control/mpc");
   REQUIRE(t != nullptr);
   REQUIRE(t->make);
   auto block = t->make({}, tk::Config{{"file", path.string()}});

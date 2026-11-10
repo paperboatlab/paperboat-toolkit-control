@@ -1,14 +1,16 @@
 # paperboat-toolkit-control: the optional control toolkit for Paperboat.
 #
-# Builds paperboat::toolkit_mpc. It links the optimization toolkit's Workspace.
-#   1. In-tree: copy this folder into a paperboat checkout at engine/toolkit/mpc and
+# Builds paperboat::toolkit_control. It links the optimization toolkit's Workspace.
+#   1. In-tree: copy this folder into a paperboat checkout at engine/toolkit/control and
 #      install the optimization toolkit at engine/toolkit/optimization; the engine discovers
 #      both from their toolkit.toml.
 #   2. Standalone: set PAPERBOAT_SOURCE_DIR and PAPERBOAT_OPTIMIZATION_DIR, or let this file
 #      fetch paperboat and the optimization toolkit from GitHub.
 
 cmake_minimum_required(VERSION 3.20)
-project(paperboat_toolkit_mpc LANGUAGES CXX)
+project(paperboat_toolkit_control LANGUAGES CXX)
+
+enable_testing()
 
 include(FetchContent)
 
@@ -36,4 +38,4 @@ endif()
 
 add_subdirectory("${PAPERBOAT_SOURCE_DIR}/engine" "${CMAKE_BINARY_DIR}/paperboat-engine" EXCLUDE_FROM_ALL)
 add_subdirectory("${PAPERBOAT_OPTIMIZATION_DIR}" "${CMAKE_BINARY_DIR}/optimization")
-add_subdirectory(engine/toolkit/mpc)
+add_subdirectory(engine/toolkit/control)

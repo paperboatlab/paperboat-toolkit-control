@@ -10,9 +10,9 @@ if(NOT TARGET paperboat_toolkit_optimization)
   endif()
 endif()
 
-add_library(paperboat_toolkit_control src/blocks.cpp
-  src/control/pid/pid.cpp src/control/integrator/integrator.cpp
-  src/control/lag/lag.cpp src/control/delay/delay.cpp)
+# One folder per block: src/control/<block>/<block>.cpp.
+file(GLOB PAPERBOAT_CONTROL_BLOCKS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/control/*/*.cpp")
+add_library(paperboat_toolkit_control src/register.cpp ${PAPERBOAT_CONTROL_BLOCKS})
 add_library(paperboat::toolkit_control ALIAS paperboat_toolkit_control)
 target_include_directories(paperboat_toolkit_control PUBLIC include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(paperboat_toolkit_control

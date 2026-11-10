@@ -1,5 +1,0 @@
-# Optional control toolkit: MPC, a per-step LP and NMPC. Its CMake links the optimization
-# toolkit's Workspace; the backend registers `control::register_control` when it links this package.
-name = "control"
-optional = true
-register = ["register_control"]

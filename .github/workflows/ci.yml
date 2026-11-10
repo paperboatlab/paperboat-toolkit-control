@@ -24,7 +24,7 @@ jobs:
       - name: Overlay the toolkits
         run: |
           cp -r optimization/engine/toolkit/optimization paperboat/engine/toolkit/optimization
-          cp -r engine/toolkit/control paperboat/engine/toolkit/control
+          cp -r engine/toolkit/mpc paperboat/engine/toolkit/mpc
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ninja-build cmake g++
       - name: Configure
@@ -40,6 +40,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check toolkit.toml parses
-        run: python3 -c "import tomllib; tomllib.load(open('engine/toolkit/control/toolkit.toml','rb')); print('toolkit.toml OK')"
+        run: python3 -c "import tomllib; tomllib.load(open('engine/toolkit/mpc/toolkit.toml','rb')); print('toolkit.toml OK')"
       - name: Check the public header is present
-        run: test -f engine/toolkit/control/include/paperboat/toolkit/control.hpp && echo OK
+        run: test -f engine/toolkit/mpc/include/paperboat/toolkit/mpc.hpp && echo OK

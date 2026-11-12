@@ -14,6 +14,23 @@ It carries the clock dynamics that used to be built into the engine:
 `integrator`, `lag` and `delay` have no direct feedthrough, so a feedback loop may pass through
 them. A vector signal gets one state per element.
 
+It also adds frequency-domain and state-space blocks. Polynomial coefficients and matrices are
+text params in MATLAB style, with polynomial coefficients in descending powers:
+
+| Block | What it does |
+| --- | --- |
+| `control/transfer_fn` | `u` → `y`; `num`, `den`, `domain` (`s` or `z`), optional `solver`. `s`: controllable canonical realization; `z`: direct form II transposed |
+| `control/state_space` | `u` → `y`, `x`; `A`, `B`, `C`, `D` text matrices, `domain` (`s` or `z`), optional `solver` |
+| `control/bode` | `w` → `magnitude` (dB), `phase` (degrees); `num`, `den`, `domain`, `sample_time` for `z` |
+| `control/controllability` | `A`, `B` text matrices → `rank`, `order`, `controllable` |
+| `control/observability` | `A`, `C` text matrices → `rank`, `order`, `observable` |
+
+A coefficient list is `"1 2 1"` or `"[1, 2, 1]"`; a matrix is `"1 0; 0 1"` or
+`"[[1, 0], [0, 1]]"`. `transfer_fn` takes a signal `u` and gives a signal `y`; `state_space`
+takes a numbers list `u` and gives numbers lists `y` and `x`. `controllability` and
+`observability` have no signal inputs: their matrices are params, and they report the rank of
+`[B AB …]` and `[C; CA; …]`.
+
 It also adds per-step Signal blocks that use the optimization toolkit's `Workspace`:
 
 | Block | Problem |

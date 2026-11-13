@@ -20,7 +20,7 @@ target_link_libraries(paperboat_toolkit_control
   PRIVATE paperboat_toolkit_optimization paperboat_warnings)
 
 if(PAPERBOAT_BUILD_TESTS)
-  add_executable(paperboat_control_tests tests/mpc_test.cpp tests/control_test.cpp tests/frequency_test.cpp tests/lti_test.cpp tests/linear_test.cpp tests/nonlinear_test.cpp)
+  add_executable(paperboat_control_tests tests/mpc_test.cpp tests/control_test.cpp tests/frequency_test.cpp tests/lti_test.cpp tests/linear_test.cpp tests/nonlinear_test.cpp tests/statespace_test.cpp)
   target_include_directories(paperboat_control_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
   target_link_libraries(paperboat_control_tests PRIVATE paperboat_toolkit_control Catch2::Catch2WithMain)
   add_test(NAME paperboat_control_tests COMMAND paperboat_control_tests)

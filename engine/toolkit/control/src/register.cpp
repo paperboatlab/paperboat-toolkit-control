@@ -38,6 +38,13 @@ void add_zoh(Registry&);
 void add_foh(Registry&);
 void add_discrete_derivative(Registry&);
 void add_tapped_delay(Registry&);
+void add_c2d(Registry&);
+void add_lqr(Registry&);
+void add_place(Registry&);
+void add_kalman_gain(Registry&);
+void add_state_feedback(Registry&);
+void add_observer(Registry&);
+void add_kalman(Registry&);
 
 void register_control(Registry& registry) {
   add_pid(registry);
@@ -71,6 +78,13 @@ void register_control(Registry& registry) {
   add_foh(registry);
   add_discrete_derivative(registry);
   add_tapped_delay(registry);
+  add_c2d(registry);
+  add_lqr(registry);
+  add_place(registry);
+  add_kalman_gain(registry);
+  add_state_feedback(registry);
+  add_observer(registry);
+  add_kalman(registry);
   add_mpc(registry);
   add_lp_step(registry);
   add_nmpc(registry);

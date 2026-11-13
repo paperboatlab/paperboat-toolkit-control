@@ -26,6 +26,7 @@
 
 #include "common.hpp"
 #include "control/matrix.hpp"
+#include "control/sampler.hpp"
 #include "paperboat/toolkit/solve.hpp"
 
 namespace paperboat::toolkit::control {
@@ -178,16 +179,12 @@ class Lti : public Block {
 
   Values step(const Context& ctx, const Values& in) override {
     const double u = get_or(in, "u");
-    const double period = integrated_ ? 0.0 : options_.sample_time;
     if (!started_) {
       started_ = true;
-      next_sample_ = ctx.t;
+      sampler_.period = integrated_ ? 0.0 : options_.sample_time;
       if (options_.steady_start) settle(u);
     }
-    if (period > 0) {
-      if (ctx.t + 1e-9 * period < next_sample_) return {{"y", y_}};  // hold between samples
-      while (next_sample_ <= ctx.t + 1e-9 * period) next_sample_ += period;
-    }
+    if (!sampler_.due(ctx.t)) return {{"y", y_}};  // hold between samples
     y_ = integrated_ ? step_solver(ctx, u) : step_discrete(u);
     return {{"y", y_}};
   }
@@ -248,7 +245,7 @@ class Lti : public Block {
   std::unique_ptr<solve::Solver> solver_;
   solve::State s_;
   bool started_ = false;
-  double next_sample_ = 0.0;
+  Sampler sampler_;
   double y_ = 0.0;
 };
 

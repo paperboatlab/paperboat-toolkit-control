@@ -19,11 +19,15 @@ text params in MATLAB style, with polynomial coefficients in descending powers:
 
 | Block | What it does |
 | --- | --- |
-| `control/transfer_fn` | `u` → `y`; `num`, `den`, `domain` (`s` or `z`), optional `solver`. `s`: controllable canonical realization; `z`: direct form II transposed |
+| `control/transfer_fn` | `u` → `y`; `num`, `den`, `domain` (`s` or `z`). `s`: controllable canonical realization, integrated (`realize = solver`) or discretized by Tustin at the step (`realize = tustin`); `z`: direct form II transposed |
 | `control/state_space` | `u` → `y`, `x`; `A`, `B`, `C`, `D` text matrices, `domain` (`s` or `z`), optional `solver` |
 | `control/bode` | `w` → `magnitude` (dB), `phase` (degrees); `num`, `den`, `domain`, `sample_time` for `z` |
 | `control/controllability` | `A`, `B` text matrices → `rank`, `order`, `controllable` |
 | `control/observability` | `A`, `C` text matrices → `rank`, `order`, `observable` |
+
+Linear blocks share `realize`, `sample_time` (z and Tustin: update every `sample_time` s and
+hold between; 0 every step), `start` (`zero`, or `steady`: begin at the steady state for the
+first input, no start-up transient) and `solver`.
 
 A coefficient list is `"1 2 1"` or `"[1, 2, 1]"`; a matrix is `"1 0; 0 1"` or
 `"[[1, 0], [0, 1]]"`. `transfer_fn` takes a signal `u` and gives a signal `y`; `state_space`

@@ -25,6 +25,27 @@ text params in MATLAB style, with polynomial coefficients in descending powers:
 | `control/controllability` | `A`, `B` text matrices → `rank`, `order`, `controllable` |
 | `control/observability` | `A`, `C` text matrices → `rank`, `order`, `observable` |
 
+Linear and filter blocks, built on the same core:
+
+| Block | What it does |
+| --- | --- |
+| `control/second_order` | k wn² / (s² + 2 zeta wn s + wn²); `wn`, `zeta`, `gain` |
+| `control/zpk` | k Π(s − z) / Π(s − p); `zeros`, `poles` (`"-1 -2+3j -2-3j"`), `gain`, `domain` |
+| `control/lead_lag` | k (s/zero + 1) / (s/pole + 1) |
+| `control/derivative` | filtered d/dt, s / (tau s + 1) |
+| `control/washout` | first-order highpass, tau s / (tau s + 1) |
+| `control/notch` | cuts `depth` dB at `freq` Hz; `width` |
+| `control/filter` | `family` (`butterworth`, `chebyshev1`, `chebyshev2`, `bessel`), `kind` (`lowpass`, `highpass`, `bandpass`, `bandstop`), `order` 1–10, `cutoff`/`cutoff2` Hz, `ripple`, `attenuation`. Matches SciPy's `butter`/`cheby1`/`cheby2`/`bessel(norm="mag")` |
+| `control/biquad` | one Audio EQ Cookbook section: `lowpass`, `highpass`, `bandpass`, `notch`, `allpass`, `peak`, `lowshelf`, `highshelf` |
+| `control/moving_average` | mean of the last `window` samples |
+| `control/ema` | y += alpha (u − y) |
+| `control/median` | median of the last `window` (odd) samples: removes spikes |
+
+Filters default to `realize = tustin` with their edges prewarped, so a cutoff is exact at any
+step; plants (`transfer_fn`, `zpk`, `second_order`) default to `solver`. Every one is
+elementwise and has feedthrough (Tustin gives a direct term): a loop needs a `lag`,
+`integrator` or `delay` in it.
+
 Linear blocks share `realize`, `sample_time` (z and Tustin: update every `sample_time` s and
 hold between; 0 every step), `start` (`zero`, or `steady`: begin at the steady state for the
 first input, no start-up transient) and `solver`.

@@ -12,6 +12,7 @@
 //
 // Polynomials are in descending powers, as MATLAB's tf() writes them.
 
+#include <algorithm>
 #include <cmath>
 #include <complex>
 #include <functional>
@@ -105,17 +106,18 @@ inline Polynomials substitute(const Coefficients& num, const Coefficients& den, 
                               const Coefficients& Q) {
   const ProperTransfer tf = proper_transfer(num, den);
   const std::size_t n = tf.order;
-  Coefficients b, a;
+  const std::size_t size = n * (std::max(P.size(), Q.size()) - 1) + 1;
+  Coefficients b(size, 0.0), a(size, 0.0);
   for (std::size_t i = 0; i <= n; ++i) {  // tf.num[i] multiplies s^(n - i)
     const Coefficients term = poly_mul(poly_pow(P, n - i), poly_pow(Q, i));
-    if (b.empty()) b.assign(term.size(), 0.0), a.assign(term.size(), 0.0);
+    const std::size_t at = size - term.size();  // descending powers: align the constant terms
     for (std::size_t j = 0; j < term.size(); ++j) {
-      b[j] += tf.num[i] * term[j];
-      a[j] += tf.den[i] * term[j];
+      b[at + j] += tf.num[i] * term[j];
+      a[at + j] += tf.den[i] * term[j];
     }
   }
-  b = trim_leading_zeros(b);  // keep b and a the same length: pad b back
-  a = trim_leading_zeros(a);
+  a = trim_leading_zeros(a);  // keep b and a the same length: pad b back
+  b = trim_leading_zeros(b);
   if (b.size() < a.size()) b.insert(b.begin(), a.size() - b.size(), 0.0);
   const double lead = a[0];
   for (double& v : b) v /= lead;
@@ -292,12 +294,16 @@ class Designed : public Block {
   double T_ = -1.0;
 };
 
-// The params every designed block shares; `realize` defaults to what suits the block.
+// The params every designed block shares; `realize` defaults to what suits the block, and a
+// block that only ever designs z coefficients passes "" and gets no realize or solver.
 inline std::vector<ParamDef> lti_params(std::string realize_default) {
-  return {{.id = "realize", .type = "enum", .default_text = std::move(realize_default), .options = {"solver", "tustin"}},
-          {.id = "sample_time", .default_value = 0.0, .unit = "s"},
-          {.id = "start", .type = "enum", .default_text = "zero", .options = {"zero", "steady"}},
-          solve::param()};
+  std::vector<ParamDef> out;
+  if (!realize_default.empty())
+    out.push_back({.id = "realize", .type = "enum", .default_text = realize_default, .options = {"solver", "tustin"}});
+  out.push_back({.id = "sample_time", .default_value = 0.0, .unit = "s"});
+  out.push_back({.id = "start", .type = "enum", .default_text = "zero", .options = {"zero", "steady"}});
+  if (!realize_default.empty()) out.push_back(solve::param());
+  return out;
 }
 
 inline std::unique_ptr<Block> make_designed(const Values& p, const Config& c, std::string realize_default,

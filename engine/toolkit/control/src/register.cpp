@@ -17,6 +17,17 @@ void add_state_space(Registry&);
 void add_bode(Registry&);
 void add_controllability(Registry&);
 void add_observability(Registry&);
+void add_second_order(Registry&);
+void add_zpk(Registry&);
+void add_lead_lag(Registry&);
+void add_derivative(Registry&);
+void add_washout(Registry&);
+void add_notch(Registry&);
+void add_filter(Registry&);
+void add_biquad(Registry&);
+void add_moving_average(Registry&);
+void add_median(Registry&);
+void add_ema(Registry&);
 
 void register_control(Registry& registry) {
   add_pid(registry);
@@ -29,6 +40,17 @@ void register_control(Registry& registry) {
   add_bode(registry);
   add_controllability(registry);
   add_observability(registry);
+  add_second_order(registry);
+  add_zpk(registry);
+  add_lead_lag(registry);
+  add_derivative(registry);
+  add_washout(registry);
+  add_notch(registry);
+  add_filter(registry);
+  add_biquad(registry);
+  add_moving_average(registry);
+  add_median(registry);
+  add_ema(registry);
   add_mpc(registry);
   add_lp_step(registry);
   add_nmpc(registry);

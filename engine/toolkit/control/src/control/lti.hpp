@@ -69,6 +69,48 @@ inline Coefficients poly_from_roots(const std::vector<Complex>& roots, std::stri
   return out;
 }
 
+// Roots as text, "-1 -2+3j -2-3j" (i works for j), as zpk and place take them.
+inline Complex parse_root(std::string token, std::string_view param) {
+  const auto bad = [&] { return std::invalid_argument(std::string(param) + ": \"" + token + "\" is not a number like -2 or -2+3j"); };
+  if (token.back() != 'j' && token.back() != 'i') {
+    std::size_t i = 0;
+    double re = 0;
+    if (!read_number(token, i, re) || i != token.size()) throw bad();
+    return re;
+  }
+  std::string body = token.substr(0, token.size() - 1);
+  // The sign that starts the imaginary part: the last + or - not at the start and not in an exponent.
+  std::size_t split = std::string::npos;
+  for (std::size_t i = body.size(); i-- > 1;)
+    if ((body[i] == '+' || body[i] == '-') && body[i - 1] != 'e' && body[i - 1] != 'E') {
+      split = i;
+      break;
+    }
+  const std::string re_text = split == std::string::npos ? "" : body.substr(0, split);
+  std::string im_text = split == std::string::npos ? body : body.substr(split);
+  if (im_text.empty() || im_text == "+" || im_text == "-") im_text += "1";
+  double re = 0, im = 0;
+  std::size_t i = 0;
+  if (!re_text.empty() && (!read_number(re_text, i, re) || i != re_text.size())) throw bad();
+  i = 0;
+  if (!read_number(im_text, i, im) || i != im_text.size()) throw bad();
+  return {re, im};
+}
+
+inline std::vector<Complex> parse_roots(const std::string& text, std::string_view param) {
+  std::vector<Complex> out;
+  std::string token;
+  for (char ch : text + " ") {
+    if (ch == ' ' || ch == ',' || ch == '[' || ch == ']' || ch == '\t' || ch == '\n') {
+      if (!token.empty()) out.push_back(parse_root(token, param));
+      token.clear();
+    } else {
+      token += ch;
+    }
+  }
+  return out;
+}
+
 inline Coefficients trim_leading_zeros(const Coefficients& coefficients) {
   std::size_t first = 0;
   while (first + 1 < coefficients.size() && coefficients[first] == 0.0) ++first;

@@ -60,6 +60,20 @@ Nonlinear and discrete blocks:
 | `control/discrete_derivative` | (u[n] − u[n−1]) / T |
 | `control/tapped_delay` | last `taps` samples as a numbers list, newest first |
 
+State-space design and estimation. Design blocks have no inputs and give matrices as text
+(`"1 2; 3 4"`), so their output wires into `state_feedback`'s `K` input or binds like an MX
+variable. A number for `Q` or `R` is that times the identity.
+
+| Block | What it does |
+| --- | --- |
+| `control/lqr` | `A`, `B`, `Q`, `R`, `domain` → `K`, `P` (continuous: matrix sign function; discrete: Riccati iteration) |
+| `control/place` | `A`, `B`, `poles` → `K` (Ackermann, one input) |
+| `control/kalman_gain` | `A`, `C`, `Q`, `R`, `domain` → `L`, `P` (the dual of `lqr`) |
+| `control/c2d` | `A`, `B`, `dt`, `method` (`zoh`, `tustin`) → `Ad`, `Bd` |
+| `control/state_feedback` | `x`, `r`, `K` (text input or param) → `u = −K x + N r` |
+| `control/observer` | Luenberger, `u`, `y` → `x_hat`, `y_hat`; no feedthrough, so it closes a loop |
+| `control/kalman` | discrete Kalman filter, `u`, `y` → `x_hat`, `P_trace`, `innovation` |
+
 Linear blocks share `realize`, `sample_time` (z and Tustin: update every `sample_time` s and
 hold between; 0 every step), `start` (`zero`, or `steady`: begin at the steady state for the
 first input, no start-up transient) and `solver`.

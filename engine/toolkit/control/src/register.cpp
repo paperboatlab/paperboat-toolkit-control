@@ -28,6 +28,16 @@ void add_biquad(Registry&);
 void add_moving_average(Registry&);
 void add_median(Registry&);
 void add_ema(Registry&);
+void add_rate_limiter(Registry&);
+void add_backlash(Registry&);
+void add_quantizer(Registry&);
+void add_relay(Registry&);
+void add_friction(Registry&);
+void add_discrete_integrator(Registry&);
+void add_zoh(Registry&);
+void add_foh(Registry&);
+void add_discrete_derivative(Registry&);
+void add_tapped_delay(Registry&);
 
 void register_control(Registry& registry) {
   add_pid(registry);
@@ -51,6 +61,16 @@ void register_control(Registry& registry) {
   add_moving_average(registry);
   add_median(registry);
   add_ema(registry);
+  add_rate_limiter(registry);
+  add_backlash(registry);
+  add_quantizer(registry);
+  add_relay(registry);
+  add_friction(registry);
+  add_discrete_integrator(registry);
+  add_zoh(registry);
+  add_foh(registry);
+  add_discrete_derivative(registry);
+  add_tapped_delay(registry);
   add_mpc(registry);
   add_lp_step(registry);
   add_nmpc(registry);

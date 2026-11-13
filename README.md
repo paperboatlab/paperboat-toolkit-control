@@ -6,7 +6,7 @@ It carries the clock dynamics that used to be built into the engine:
 
 | Block | What it does |
 | --- | --- |
-| `control/pid` | `e` → `u`; gains `kp`, `ki`, `kd` |
+| `control/pid` | `e` → `u`; gains `kp`, `ki`, `kd`; `n` filters the derivative (0: none); `u_min` < `u_max` limits `u` (equal: none) with `anti_windup` = `none`, `clamp` or `back_calc` (rate `kt`) |
 | `control/integrator` | `u` → `y`; `initial`, optional `solver` |
 | `control/lag` | first-order lag `u` → `y`; `tau`, optional `solver` |
 | `control/delay` | its input `steps` clock steps ago; `initial` |
@@ -45,6 +45,20 @@ Filters default to `realize = tustin` with their edges prewarped, so a cutoff is
 step; plants (`transfer_fn`, `zpk`, `second_order`) default to `solver`. Every one is
 elementwise and has feedthrough (Tustin gives a direct term): a loop needs a `lag`,
 `integrator` or `delay` in it.
+
+Nonlinear and discrete blocks:
+
+| Block | What it does |
+| --- | --- |
+| `control/rate_limiter` | follows `u` no faster than `rise` up, `fall` down (per s) |
+| `control/backlash` | gear play of `width` |
+| `control/quantizer` | `u` in steps of `interval`, `round` or `floor` |
+| `control/relay` | hysteresis switch: `on_value` from `on_at`, `off_value` from `off_at` |
+| `control/friction` | Coulomb + viscous + Stribeck force at velocity `u` |
+| `control/discrete_integrator` | `forward`, `backward` or `trapezoid`; `lower`/`upper`; input `reset` |
+| `control/zoh`, `control/foh` | zero- and first-order hold at `sample_time` |
+| `control/discrete_derivative` | (u[n] − u[n−1]) / T |
+| `control/tapped_delay` | last `taps` samples as a numbers list, newest first |
 
 Linear blocks share `realize`, `sample_time` (z and Tustin: update every `sample_time` s and
 hold between; 0 every step), `start` (`zero`, or `steady`: begin at the steady state for the

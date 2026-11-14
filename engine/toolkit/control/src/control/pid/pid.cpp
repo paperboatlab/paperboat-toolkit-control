@@ -44,6 +44,18 @@ class Pid : public Block {
     return {{"u", u}};
   }
 
+  // kp + ki/s + kd n s / (s + n), unsaturated: x1 = ∫e, x2' = −n x2 + e (the derivative filter).
+  std::optional<LinearModel> linearize(const Values&) const override {
+    if (kd_ != 0 && o_.n <= 0) throw std::invalid_argument("kd needs a derivative filter (n > 0) to be analysed: kd·s alone has no finite gain at high frequency");
+    LinearModel m{.inputs = {"e"}, .outputs = {"u"}};
+    if (kd_ == 0) {
+      m.states = 1, m.A = {0}, m.B = {1}, m.C = {ki_}, m.D = {kp_};
+    } else {
+      m.states = 2, m.A = {0, 0, 0, -o_.n}, m.B = {1, 1}, m.C = {ki_, -kd_ * o_.n * o_.n}, m.D = {kp_ + kd_ * o_.n};
+    }
+    return m;
+  }
+
   // Tunable gains (#75): the integral and the previous error carry on.
   bool set_param(std::string_view id, double value) override {
     double* gain = id == "kp" ? &kp_ : id == "ki" ? &ki_ : id == "kd" ? &kd_ : nullptr;

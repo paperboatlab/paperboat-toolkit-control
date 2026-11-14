@@ -51,6 +51,23 @@ class StateSpaceBlock : public Block {
     return {{"y", output(x_, u)}, {"x", x_}};
   }
 
+  // Vector ports as channels: u#0…, y#0… then x#0… (x as itself).
+  std::optional<LinearModel> linearize(const Values&) const override {
+    const std::size_t n = model_.n, m = model_.m, p = model_.p;
+    LinearModel out{.states = n, .A = model_.A.values, .B = model_.B.values};
+    for (std::size_t k = 0; k < m; ++k) out.inputs.push_back("u#" + std::to_string(k));
+    for (std::size_t k = 0; k < p; ++k) out.outputs.push_back("y#" + std::to_string(k));
+    for (std::size_t k = 0; k < n; ++k) out.outputs.push_back("x#" + std::to_string(k));
+    out.C = model_.C.values;
+    out.D = model_.D.values;
+    for (std::size_t k = 0; k < n; ++k) {
+      for (std::size_t c = 0; c < n; ++c) out.C.push_back(c == k ? 1.0 : 0.0);
+      for (std::size_t c = 0; c < m; ++c) out.D.push_back(0.0);
+    }
+    out.discrete = domain_ == "z";
+    return out;
+  }
+
  private:
   Vector input(const Values& in) const {
     Vector u = as_vector(in, "u");

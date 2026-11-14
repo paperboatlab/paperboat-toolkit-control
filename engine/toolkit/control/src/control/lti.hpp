@@ -18,6 +18,7 @@
 #include <functional>
 #include <memory>
 #include <numbers>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -219,6 +220,27 @@ class Lti : public Block {
     }
   }
 
+  // Its (A, B, C, D): the controllable canonical form in s, direct form II transposed in z.
+  std::optional<LinearModel> linearize(const Values&) const override {
+    LinearModel m{.inputs = {"u"}, .outputs = {"y"}, .states = order_};
+    const std::size_t n = order_;
+    m.A.assign(n * n, 0.0), m.B.assign(n, 0.0), m.C.assign(n, 0.0), m.D = {num_[0]};
+    if (integrated_) {
+      m.A = A_.values, m.B = B_, m.C = C_, m.D = {D_};
+      return m;
+    }
+    // y = b0 u + s0;  s_i ← b_{i+1} u + s_{i+1} − a_{i+1} y
+    for (std::size_t i = 0; i < n; ++i) {
+      m.A[i * n] = -den_[i + 1];
+      if (i + 1 < n) m.A[i * n + i + 1] = 1.0;
+      m.B[i] = num_[i + 1] - den_[i + 1] * num_[0];
+    }
+    if (n > 0) m.C[0] = 1.0;
+    m.discrete = true;
+    m.sample_time = options_.sample_time;
+    return m;
+  }
+
   Values step(const Context& ctx, const Values& in) override {
     const double u = get_or(in, "u");
     if (!started_) {
@@ -306,6 +328,12 @@ class Designed : public Block {
       : design_(std::move(design)), tustin_(tustin), options_(std::move(options)) {
     build(0.0);  // check the params now, so a bad one fails when the block is made
     if (tustin_) lti_.reset();
+  }
+
+  // The design itself, unwarped: an s design as the analog system, a z design as it is.
+  std::optional<LinearModel> linearize(const Values& in) const override {
+    const Design d = design_(0.0);
+    return Lti(d.num, d.den, d.domain, options_).linearize(in);
   }
 
   Values step(const Context& ctx, const Values& in) override {

@@ -12,7 +12,8 @@ endif()
 
 # One folder per block: src/control/<block>/<block>.cpp.
 file(GLOB PAPERBOAT_CONTROL_BLOCKS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/control/*/*.cpp")
-add_library(paperboat_toolkit_control src/register.cpp ${PAPERBOAT_CONTROL_BLOCKS})
+# Analyses are not blocks, so they live outside the block folders: src/analysis/<name>.cpp.
+add_library(paperboat_toolkit_control src/register.cpp src/analysis/linear.cpp ${PAPERBOAT_CONTROL_BLOCKS})
 add_library(paperboat::toolkit_control ALIAS paperboat_toolkit_control)
 target_include_directories(paperboat_toolkit_control PUBLIC include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(paperboat_toolkit_control

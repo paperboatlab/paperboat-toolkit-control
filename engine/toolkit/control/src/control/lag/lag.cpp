@@ -21,6 +21,10 @@ class Lag : public Block {
   explicit Lag(double tau, std::string solver = "auto")
       : tau_(tau), solver_name_(std::move(solver)), solver_(solve::make(solver_name_)) {}
   Values outputs() const override { return {{"y", y_}}; }
+  std::optional<LinearModel> linearize(const Values&) const override {
+    if (tau_ <= 0) return std::nullopt;  // tau 0 is a one-step delay
+    return LinearModel{.inputs = {"u"}, .outputs = {"y"}, .states = 1, .A = {-1 / tau_}, .B = {1 / tau_}, .C = {1}, .D = {0}};
+  }
   Values step(const Context& ctx, const Values& in) override {
     const double u = get_or(in, "u");
     if (tau_ <= 0) {

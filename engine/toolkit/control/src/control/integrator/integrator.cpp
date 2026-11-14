@@ -24,6 +24,9 @@ class Integrator : public Block {
   explicit Integrator(double initial, std::string solver = "auto")
       : y_(initial), solver_name_(std::move(solver)), solver_(solve::make(solver_name_)) {}
   Values outputs() const override { return {{"y", y_}}; }
+  std::optional<LinearModel> linearize(const Values&) const override {
+    return LinearModel{.inputs = {"u"}, .outputs = {"y"}, .states = 1, .A = {0}, .B = {1}, .C = {1}, .D = {0}};
+  }
   Values step(const Context& ctx, const Values& in) override {
     solve::State s = {y_};
     solver_->step(s, ctx.t, ctx.dt, [&](double, const solve::State&) {

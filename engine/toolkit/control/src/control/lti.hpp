@@ -12,11 +12,13 @@
 //
 // Polynomials are in descending powers, as MATLAB's tf() writes them.
 
+#include <algorithm>
 #include <cmath>
 #include <complex>
 #include <functional>
 #include <memory>
 #include <numbers>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -25,6 +27,7 @@
 
 #include "common.hpp"
 #include "control/matrix.hpp"
+#include "control/sampler.hpp"
 #include "paperboat/toolkit/solve.hpp"
 
 namespace paperboat::toolkit::control {
@@ -67,6 +70,48 @@ inline Coefficients poly_from_roots(const std::vector<Complex>& roots, std::stri
   return out;
 }
 
+// Roots as text, "-1 -2+3j -2-3j" (i works for j), as zpk and place take them.
+inline Complex parse_root(std::string token, std::string_view param) {
+  const auto bad = [&] { return std::invalid_argument(std::string(param) + ": \"" + token + "\" is not a number like -2 or -2+3j"); };
+  if (token.back() != 'j' && token.back() != 'i') {
+    std::size_t i = 0;
+    double re = 0;
+    if (!read_number(token, i, re) || i != token.size()) throw bad();
+    return re;
+  }
+  std::string body = token.substr(0, token.size() - 1);
+  // The sign that starts the imaginary part: the last + or - not at the start and not in an exponent.
+  std::size_t split = std::string::npos;
+  for (std::size_t i = body.size(); i-- > 1;)
+    if ((body[i] == '+' || body[i] == '-') && body[i - 1] != 'e' && body[i - 1] != 'E') {
+      split = i;
+      break;
+    }
+  const std::string re_text = split == std::string::npos ? "" : body.substr(0, split);
+  std::string im_text = split == std::string::npos ? body : body.substr(split);
+  if (im_text.empty() || im_text == "+" || im_text == "-") im_text += "1";
+  double re = 0, im = 0;
+  std::size_t i = 0;
+  if (!re_text.empty() && (!read_number(re_text, i, re) || i != re_text.size())) throw bad();
+  i = 0;
+  if (!read_number(im_text, i, im) || i != im_text.size()) throw bad();
+  return {re, im};
+}
+
+inline std::vector<Complex> parse_roots(const std::string& text, std::string_view param) {
+  std::vector<Complex> out;
+  std::string token;
+  for (char ch : text + " ") {
+    if (ch == ' ' || ch == ',' || ch == '[' || ch == ']' || ch == '\t' || ch == '\n') {
+      if (!token.empty()) out.push_back(parse_root(token, param));
+      token.clear();
+    } else {
+      token += ch;
+    }
+  }
+  return out;
+}
+
 inline Coefficients trim_leading_zeros(const Coefficients& coefficients) {
   std::size_t first = 0;
   while (first + 1 < coefficients.size() && coefficients[first] == 0.0) ++first;
@@ -105,17 +150,18 @@ inline Polynomials substitute(const Coefficients& num, const Coefficients& den, 
                               const Coefficients& Q) {
   const ProperTransfer tf = proper_transfer(num, den);
   const std::size_t n = tf.order;
-  Coefficients b, a;
+  const std::size_t size = n * (std::max(P.size(), Q.size()) - 1) + 1;
+  Coefficients b(size, 0.0), a(size, 0.0);
   for (std::size_t i = 0; i <= n; ++i) {  // tf.num[i] multiplies s^(n - i)
     const Coefficients term = poly_mul(poly_pow(P, n - i), poly_pow(Q, i));
-    if (b.empty()) b.assign(term.size(), 0.0), a.assign(term.size(), 0.0);
+    const std::size_t at = size - term.size();  // descending powers: align the constant terms
     for (std::size_t j = 0; j < term.size(); ++j) {
-      b[j] += tf.num[i] * term[j];
-      a[j] += tf.den[i] * term[j];
+      b[at + j] += tf.num[i] * term[j];
+      a[at + j] += tf.den[i] * term[j];
     }
   }
-  b = trim_leading_zeros(b);  // keep b and a the same length: pad b back
-  a = trim_leading_zeros(a);
+  a = trim_leading_zeros(a);  // keep b and a the same length: pad b back
+  b = trim_leading_zeros(b);
   if (b.size() < a.size()) b.insert(b.begin(), a.size() - b.size(), 0.0);
   const double lead = a[0];
   for (double& v : b) v /= lead;
@@ -174,18 +220,35 @@ class Lti : public Block {
     }
   }
 
+  // Its (A, B, C, D): the controllable canonical form in s, direct form II transposed in z.
+  std::optional<LinearModel> linearize(const Values&) const override {
+    LinearModel m{.inputs = {"u"}, .outputs = {"y"}, .states = order_};
+    const std::size_t n = order_;
+    m.A.assign(n * n, 0.0), m.B.assign(n, 0.0), m.C.assign(n, 0.0), m.D = {num_[0]};
+    if (integrated_) {
+      m.A = A_.values, m.B = B_, m.C = C_, m.D = {D_};
+      return m;
+    }
+    // y = b0 u + s0;  s_i ← b_{i+1} u + s_{i+1} − a_{i+1} y
+    for (std::size_t i = 0; i < n; ++i) {
+      m.A[i * n] = -den_[i + 1];
+      if (i + 1 < n) m.A[i * n + i + 1] = 1.0;
+      m.B[i] = num_[i + 1] - den_[i + 1] * num_[0];
+    }
+    if (n > 0) m.C[0] = 1.0;
+    m.discrete = true;
+    m.sample_time = options_.sample_time;
+    return m;
+  }
+
   Values step(const Context& ctx, const Values& in) override {
     const double u = get_or(in, "u");
-    const double period = integrated_ ? 0.0 : options_.sample_time;
     if (!started_) {
       started_ = true;
-      next_sample_ = ctx.t;
+      sampler_.period = integrated_ ? 0.0 : options_.sample_time;
       if (options_.steady_start) settle(u);
     }
-    if (period > 0) {
-      if (ctx.t + 1e-9 * period < next_sample_) return {{"y", y_}};  // hold between samples
-      while (next_sample_ <= ctx.t + 1e-9 * period) next_sample_ += period;
-    }
+    if (!sampler_.due(ctx.t)) return {{"y", y_}};  // hold between samples
     y_ = integrated_ ? step_solver(ctx, u) : step_discrete(u);
     return {{"y", y_}};
   }
@@ -246,7 +309,7 @@ class Lti : public Block {
   std::unique_ptr<solve::Solver> solver_;
   solve::State s_;
   bool started_ = false;
-  double next_sample_ = 0.0;
+  Sampler sampler_;
   double y_ = 0.0;
 };
 
@@ -265,6 +328,12 @@ class Designed : public Block {
       : design_(std::move(design)), tustin_(tustin), options_(std::move(options)) {
     build(0.0);  // check the params now, so a bad one fails when the block is made
     if (tustin_) lti_.reset();
+  }
+
+  // The design itself, unwarped: an s design as the analog system, a z design as it is.
+  std::optional<LinearModel> linearize(const Values& in) const override {
+    const Design d = design_(0.0);
+    return Lti(d.num, d.den, d.domain, options_).linearize(in);
   }
 
   Values step(const Context& ctx, const Values& in) override {
@@ -292,12 +361,16 @@ class Designed : public Block {
   double T_ = -1.0;
 };
 
-// The params every designed block shares; `realize` defaults to what suits the block.
+// The params every designed block shares; `realize` defaults to what suits the block, and a
+// block that only ever designs z coefficients passes "" and gets no realize or solver.
 inline std::vector<ParamDef> lti_params(std::string realize_default) {
-  return {{.id = "realize", .type = "enum", .default_text = std::move(realize_default), .options = {"solver", "tustin"}},
-          {.id = "sample_time", .default_value = 0.0, .unit = "s"},
-          {.id = "start", .type = "enum", .default_text = "zero", .options = {"zero", "steady"}},
-          solve::param()};
+  std::vector<ParamDef> out;
+  if (!realize_default.empty())
+    out.push_back({.id = "realize", .type = "enum", .default_text = realize_default, .options = {"solver", "tustin"}});
+  out.push_back({.id = "sample_time", .default_value = 0.0, .unit = "s"});
+  out.push_back({.id = "start", .type = "enum", .default_text = "zero", .options = {"zero", "steady"}});
+  if (!realize_default.empty()) out.push_back(solve::param());
+  return out;
 }
 
 inline std::unique_ptr<Block> make_designed(const Values& p, const Config& c, std::string realize_default,

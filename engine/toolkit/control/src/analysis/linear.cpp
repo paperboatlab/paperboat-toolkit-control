@@ -1,4 +1,4 @@
-// control/linear: the control toolkit's analysis (paperboat#370, control#14). A subsystem or a
+// analysis/linear: the control toolkit's analysis (paperboat#370, control#14). A subsystem or a
 // selection, linearized: each block's (A, B, C, D) (Block::linearize, or differences of step()
 // for a stateless one) joined along the wires into one model from the part's inputs to its
 // outputs; then, for one input → output pair, its poles, zeros, Bode plot, margins and step.

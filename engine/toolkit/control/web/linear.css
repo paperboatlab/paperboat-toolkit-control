@@ -1,0 +1,20 @@
+/* control/linear's panel (control#14): words first, the plots in black displays. */
+.linear-panel { display: grid; gap: var(--space-3); }
+.linear-pair { display: flex; align-items: center; gap: var(--space-2); }
+.linear-pair select { height: 24px; max-width: 45%; font: var(--size-xs) var(--font-mono); }
+.linear-summary { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2) var(--space-3); }
+.linear-summary dt { font: var(--size-2xs) var(--font-sans); color: var(--text-muted); }
+.linear-summary dd { margin: 0; font: 500 var(--size-sm) var(--font-mono); font-variant-numeric: tabular-nums; }
+.linear-views { display: flex; gap: var(--space-2); }
+.linear-views button { border: 0; background: none; padding: 0; font: inherit; color: var(--text-muted); cursor: pointer; white-space: pre; }
+.linear-views button.on { color: var(--text); font-weight: 600; }
+.linear-plot { height: 200px; border-radius: var(--radius-md); overflow: hidden; }
+.linear-roots { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 2px var(--space-2); color: var(--text); }
+.linear-roots dt { color: var(--text-muted); }
+.linear-roots dd { margin: 0; overflow-wrap: anywhere; }
+.pz-map { margin: 0; display: grid; gap: 4px; }
+.pz-map svg { width: 100%; height: auto; background: var(--surface-screen); border-radius: var(--radius-md); }
+.pz-axis { stroke: var(--screen-line); stroke-width: 1; }
+.pz-axis.dashed { stroke-dasharray: 2 2; stroke: var(--text-on-screen-muted); }
+.pz-tick { fill: var(--text-on-screen-muted); font: 10px var(--font-mono); }
+.pz-map figcaption { font: var(--size-2xs) var(--font-sans); color: var(--text-muted); }

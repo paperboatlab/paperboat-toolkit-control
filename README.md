@@ -74,6 +74,15 @@ variable. A number for `Q` or `R` is that times the identity.
 | `control/observer` | Luenberger, `u`, `y` → `x_hat`, `y_hat`; no feedthrough, so it closes a loop |
 | `control/kalman` | discrete Kalman filter, `u`, `y` → `x_hat`, `P_trace`, `innovation` |
 
+**Linear analysis** (`control/linear`, needs paperboat's toolkit analyses, paperboatlab/paperboat#370).
+Pick blocks or a subsystem and press **Analyse**: the Analysis drawer shows its order and stability,
+gain and phase margins, dc gain, Bode, pole-zero map and step response, for one input → output pair.
+Each block gives its linear model (`Block::linearize`: the LTI blocks, PID with `n > 0`, integrator,
+lag, state_space); stateless blocks (`math/gain`, `math/sum`…) are linearized by differences.
+Loops inside the part are solved; a block that has no linear model (`median`, `relay`…) is named.
+Its panel is this toolkit's `web/` part, so the entry points appear only when this toolkit is
+installed.
+
 Linear blocks share `realize`, `sample_time` (z and Tustin: update every `sample_time` s and
 hold between; 0 every step), `start` (`zero`, or `steady`: begin at the steady state for the
 first input, no start-up transient) and `solver`.

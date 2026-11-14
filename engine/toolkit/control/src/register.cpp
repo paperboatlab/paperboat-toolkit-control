@@ -45,6 +45,7 @@ void add_kalman_gain(Registry&);
 void add_state_feedback(Registry&);
 void add_observer(Registry&);
 void add_kalman(Registry&);
+void add_linear(Registry&);
 
 void register_control(Registry& registry) {
   add_pid(registry);
@@ -85,6 +86,7 @@ void register_control(Registry& registry) {
   add_state_feedback(registry);
   add_observer(registry);
   add_kalman(registry);
+  add_linear(registry);  // the analysis (paperboat#370), not a block
   add_mpc(registry);
   add_lp_step(registry);
   add_nmpc(registry);

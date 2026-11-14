@@ -2,6 +2,7 @@
 
 // Shared by several control blocks.
 
+#include "control/compact.hpp"
 #include <algorithm>
 #include <cmath>
 #include <deque>
@@ -19,6 +20,7 @@ namespace paperboat::toolkit::control {
 inline void add_without_feedthrough(Registry& registry, Template t) {
   t.def.feedthrough = false;
   t.def.elementwise = t.def.type != "delay";
+  apply_compact_view(t);
   registry.add(std::move(t));
 }
 

@@ -12,6 +12,7 @@
 //
 // Polynomials are in descending powers, as MATLAB's tf() writes them.
 
+#include "control/compact.hpp"
 #include <algorithm>
 #include <cmath>
 #include <complex>
@@ -400,6 +401,7 @@ inline void add_designed(Registry& registry, std::string type, std::string label
   t.def.flows = {"signal"};
   t.def.feedthrough = true;
   t.def.elementwise = true;
+  apply_compact_view(t);
   registry.add(std::move(t));
 }
 

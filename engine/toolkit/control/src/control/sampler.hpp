@@ -3,6 +3,7 @@
 // Private to the toolkit: when a block with a sample_time takes its next sample, and how the
 // small Signal blocks register.
 
+#include "control/compact.hpp"
 #include <utility>
 
 #include "common.hpp"
@@ -29,6 +30,7 @@ struct Sampler {
 inline void add_signal(Registry& registry, Template t, bool elementwise = true) {
   t.def.flows = {"signal"};
   t.def.elementwise = elementwise;
+  apply_compact_view(t);
   registry.add(std::move(t));
 }
 

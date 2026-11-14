@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "common.hpp"
+#include "control/compact.hpp"
 #include "control/matrix.hpp"
 
 namespace paperboat::toolkit::control {
@@ -92,6 +93,7 @@ void add_pid(Registry& registry) {
       "Drives an error to zero: proportional, integral and derivative terms. n filters the derivative; "
       "u_min < u_max limits the output, with anti-windup (clamp or back_calc with kt). Equal limits: none.");
   pid.def.elementwise = true;  // a vector error: one controller per element
+  apply_compact_view(pid);
   registry.add(std::move(pid));
 }
 

@@ -242,6 +242,33 @@ class Lti : public Block {
     return m;
   }
 
+  // Strictly proper (no direct term) and updated every step from rest: y comes from the state
+  // alone, so a feedback loop through it is not an algebraic loop. A steady start needs the
+  // first input, and a sampled z block holds its output between samples: those keep it.
+  bool feedthrough() const override {
+    if (options_.steady_start) return true;
+    if (integrated_) return D_ != 0.0;
+    return num_[0] != 0.0 || options_.sample_time > 0;
+  }
+  // Without feedthrough: what step() is about to return, from the state before it advances.
+  Values outputs() const override {
+    double y = 0.0;
+    if (integrated_)
+      for (std::size_t i = 0; i < order_; ++i) y += C_[i] * x_[i];
+    else if (order_ > 0)
+      y = s_[0];
+    return {{"y", y}};
+  }
+
+  // y = D u + C x without advancing x (an algebraic loop's solver). Not for a sampled z block
+  // or before a steady start: those need the step itself.
+  std::optional<Values> outputs_for(const Context&, const Values& in) const override {
+    if (options_.sample_time > 0 || (options_.steady_start && !started_)) return std::nullopt;
+    const double u = get_or(in, "u");
+    auto y = get_or(outputs(), "y");
+    return Values{{"y", y + (integrated_ ? D_ : num_[0]) * u}};
+  }
+
   Values step(const Context& ctx, const Values& in) override {
     const double u = get_or(in, "u");
     if (!started_) {
@@ -337,6 +364,15 @@ class Designed : public Block {
     return Lti(d.num, d.den, d.domain, options_).linearize(in);
   }
 
+  // Tustin builds at the run's step and always has a direct term.
+  bool feedthrough() const override { return !lti_ || lti_->feedthrough(); }
+  Values outputs() const override { return lti_ ? lti_->outputs() : Values{{"y", 0.0}}; }
+  std::optional<Values> outputs_for(const Context& ctx, const Values& in) const override {
+    const double T = options_.sample_time > 0 ? options_.sample_time : ctx.dt;
+    if (!lti_ || (tustin_ && T != T_)) return std::nullopt;  // built at its first step
+    return lti_->outputs_for(ctx, in);
+  }
+
   Values step(const Context& ctx, const Values& in) override {
     const double T = options_.sample_time > 0 ? options_.sample_time : ctx.dt;
     if (!lti_ || (tustin_ && T != T_)) build(T);  // ponytail: a new dt restarts the state
@@ -386,8 +422,8 @@ inline std::unique_ptr<Block> make_designed(const Values& p, const Config& c, st
 }
 
 // Registers a designed block: `params` then the shared LTI params. A vector signal gets one
-// filter per element. Feedthrough: Tustin gives every design a direct term, so these always
-// have it; a loop needs a lag, an integrator or a delay in it.
+// filter per element. Feedthrough: Tustin gives every design a direct term; integrated or z, a
+// strictly proper one has none (Lti::feedthrough), so a loop may close through it.
 inline void add_designed(Registry& registry, std::string type, std::string label, std::vector<ParamDef> params,
                          std::string realize_default, std::function<DesignFn(const Values&, const Config&)> design,
                          std::string description) {

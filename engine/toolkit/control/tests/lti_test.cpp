@@ -91,3 +91,28 @@ TEST_CASE("start = steady begins at the steady state for the first input") {
   auto z = make("control/transfer_fn", {{"num", "0.5"}, {"den", "1 -0.5"}, {"domain", "z"}, {"start", "steady"}});
   CHECK_THAT(get_or(z->step(Context{.t = 0, .dt = 0.01}, {{"u", 4.0}}), "y"), WithinAbs(4.0, 1e-12));
 }
+
+TEST_CASE("a strictly proper transfer_fn has no feedthrough: outputs() is what step() returns") {
+  for (const Values& params : std::vector<Values>{{{"num", "2"}, {"den", "1 1"}}, {{"num", "0.5"}, {"den", "1 -0.5"}, {"domain", "z"}}}) {
+    auto lag = make("control/transfer_fn", params);
+    CHECK_FALSE(lag->feedthrough());
+    for (int k = 0; k < 50; ++k) {
+      const double before = get_or(lag->outputs(), "y");
+      CHECK(get_or(lag->step(Context{.t = k * 0.01, .dt = 0.01}, {{"u", 1.0}}), "y") == before);
+    }
+  }
+  CHECK(make("control/transfer_fn", {{"num", "1 0"}, {"den", "1 1"}})->feedthrough());                       // biproper
+  CHECK(make("control/transfer_fn", {{"num", "1"}, {"den", "1 1"}, {"realize", "tustin"}})->feedthrough());  // Tustin
+  CHECK(make("control/transfer_fn", {{"num", "1"}, {"den", "1 1"}, {"start", "steady"}})->feedthrough());
+}
+
+TEST_CASE("a biproper transfer_fn gives outputs_for(u) without stepping") {
+  auto h = make("control/transfer_fn", {{"num", "1 2"}, {"den", "1 1"}});  // D = 1
+  const Context ctx{.t = 0, .dt = 0.01};
+  for (int k = 0; k < 20; ++k) {
+    const auto peek = h->outputs_for(Context{.t = k * 0.01, .dt = 0.01}, {{"u", 3.0}});
+    REQUIRE(peek);
+    CHECK(get_or(*peek, "y") == get_or(h->step(Context{.t = k * 0.01, .dt = 0.01}, {{"u", 3.0}}), "y"));
+  }
+  CHECK_FALSE(make("control/transfer_fn", {{"num", "1"}, {"den", "1 0"}, {"domain", "z"}, {"sample_time", 0.1}})->outputs_for(ctx, {}));
+}

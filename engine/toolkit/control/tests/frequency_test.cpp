@@ -207,6 +207,10 @@ TEST_CASE("coefficient and matrix text parse in MATLAB style") {
   CHECK(control::parse_coefficients("1 2 1", "num") == control::Coefficients{1.0, 2.0, 1.0});
   CHECK(control::parse_coefficients("[1, 2, 1]", "num") == control::Coefficients{1.0, 2.0, 1.0});
   CHECK(control::parse_coefficients("[1 2 1]", "num") == control::Coefficients{1.0, 2.0, 1.0});
+  // A column too: a Julia vector from Squero MX arrives as one (`1; 2; 1`), and so does [1; 2; 1].
+  CHECK(control::parse_coefficients("1; 2; 1", "num") == control::Coefficients{1.0, 2.0, 1.0});
+  CHECK(control::parse_coefficients("[1; 2; 1]", "num") == control::Coefficients{1.0, 2.0, 1.0});
+  CHECK(control::parse_coefficients("3", "num") == control::Coefficients{3.0});
 
   const control::Matrix matrix = control::parse_matrix("[[1, 2], [3, 4]]", "A");
   CHECK(matrix.rows == 2);

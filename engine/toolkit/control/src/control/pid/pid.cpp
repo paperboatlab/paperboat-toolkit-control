@@ -45,6 +45,9 @@ class Pid : public Block {
     return {{"u", u}};
   }
 
+  // What step() would give, from a copy (an algebraic loop's solver calls it many times).
+  std::optional<Values> outputs_for(const Context& ctx, const Values& in) const override { return Pid(*this).step(ctx, in); }
+
   // kp + ki/s + kd n s / (s + n), unsaturated: x1 = ∫e, x2' = −n x2 + e (the derivative filter).
   std::optional<LinearModel> linearize(const Values&) const override {
     if (kd_ != 0 && o_.n <= 0) throw std::invalid_argument("kd needs a derivative filter (n > 0) to be analysed: kd·s alone has no finite gain at high frequency");

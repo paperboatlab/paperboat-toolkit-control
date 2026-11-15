@@ -200,11 +200,13 @@ inline Matrix parse_matrix(std::string_view text, std::string_view param) {
   return parse_flat_rows(s, param);
 }
 
+// A list of coefficients: a row (`1 2 1`, `[1, 2, 1]`) or a column (`1; 2; 1`), so a Julia
+// vector from Squero MX, which arrives as a column, reads the same as one typed in a row.
 inline Coefficients parse_coefficients(std::string_view text, std::string_view param) {
   const Matrix m = parse_matrix(text, param);
   if (m.rows == 0) matrix_error(param, "expected at least one coefficient");
-  if (m.rows != 1)
-    matrix_error(param, "expected a list of coefficients, got a " + std::to_string(m.rows) + "x" +
+  if (m.rows != 1 && m.cols != 1)
+    matrix_error(param, "expected a list of coefficients (a row or a column), got a " + std::to_string(m.rows) + "x" +
                             std::to_string(m.cols) + " matrix");
   return m.values;
 }

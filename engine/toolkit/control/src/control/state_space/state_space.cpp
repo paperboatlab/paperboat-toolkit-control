@@ -16,9 +16,11 @@ namespace {
 
 class StateSpaceBlock : public Block {
  public:
-  StateSpaceBlock(StateSpace model, std::string domain, std::string solver_name)
-      : model_(std::move(model)), domain_(std::move(domain)), solver_name_(std::move(solver_name)) {
-    x_.assign(model_.n, 0.0);
+  StateSpaceBlock(StateSpace model, Vector x0, std::string domain, std::string solver_name)
+      : model_(std::move(model)),
+        domain_(std::move(domain)),
+        solver_name_(std::move(solver_name)),
+        x_(std::move(x0)) {
     if (domain_ == "s") solver_ = solve::make(solver_name_);
   }
 
@@ -99,18 +101,22 @@ class StateSpaceBlock : public Block {
 void add_state_space(Registry& registry) {
   auto state_space = make_template(
       "control", "state_space", "State space", {"u"}, {"y", "x"},
-      {{.id = "A", .type = "text", .default_text = "0"},
-       {.id = "B", .type = "text", .default_text = "1"},
-       {.id = "C", .type = "text", .default_text = "1"},
-       {.id = "D", .type = "text", .default_text = "0"},
+      {{.id = "A", .type = "matrix", .default_text = "0"},
+       {.id = "B", .type = "matrix", .default_text = "1"},
+       {.id = "C", .type = "matrix", .default_text = "1"},
+       {.id = "D", .type = "matrix", .default_text = "0"},
+       {.id = "x0", .type = "matrix", .default_text = ""},
        {.id = "domain", .type = "enum", .default_text = "s", .options = {"s", "z"}},
        solve::param()},
       [](const Values& p, const Config& c) {
-        return std::make_unique<StateSpaceBlock>(parse_state_space(p, c), enum_text(p, c, "domain", {"s", "z"}, "s"),
+        StateSpace model = parse_state_space(p, c);
+        Vector x0 = parse_initial_state(p, c, model.n);
+        return std::make_unique<StateSpaceBlock>(std::move(model), std::move(x0),
+                                                 enum_text(p, c, "domain", {"s", "z"}, "s"),
                                                  param_text(p, c, "solver", "auto"));
       },
       "A state-space model: x' = A x + B u and y = C x + D u for s, or x[k+1] = A x + B u and "
-      "y = C x + D u for z. A is n x n, B n x m, C p x n and D p x m.");
+      "y = C x + D u for z. A is n x n, B n x m, C p x n, D p x m, and x0 is the initial state.");
   state_space.def.inputs = {numbers_port("u")};
   state_space.def.outputs = {numbers_port("y"), numbers_port("x")};
   state_space.def.flows = {"signal"};

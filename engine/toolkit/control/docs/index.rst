@@ -14,8 +14,8 @@ state-space design and estimation, and per-step MPC on the optimization toolkit.
 Dynamics and loops
 ------------------
 
-``integrator``, ``lag``, ``delay`` and ``observer`` have no direct feedthrough, so a feedback loop
-may pass through them. Every other block has feedthrough (Tustin gives a direct term), so a loop
+``integrator``, ``lag``, ``delay``, ``observer`` and ``rhs`` have no direct feedthrough, so a feedback
+loop may pass through them. Every other block has feedthrough (Tustin gives a direct term), so a loop
 needs one of those in it. A vector signal gets one state per element.
 
 Linear blocks
@@ -31,6 +31,10 @@ The linear blocks share ``realize`` (``solver``: integrated; ``tustin``: discret
 transient) and ``solver``. Filters default to ``realize = tustin`` with their edges prewarped, so a
 cutoff is exact at any step; plants (``transfer_fn``, ``zpk``, ``second_order``) default to
 ``solver``.
+
+``rhs`` integrates an ODE you type, x' = f(t, x, u): ``f`` is one expression per state separated by
+``;`` (``x1``…``xn``, ``u1``…``um``, ``t``), ``x0`` the start, and the run's solver integrates it.
+``state_space`` also takes an ``x0`` (zero when empty).
 
 Design blocks (``lqr``, ``place``, ``kalman_gain``, ``c2d``) have no inputs and give matrices as
 text (``"1 2; 3 4"``), so their output wires into ``state_feedback``'s ``K`` input or binds like a

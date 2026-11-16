@@ -150,6 +150,49 @@ TEST_CASE("state_space takes a 2x2 model and a zero D") {
   CHECK_THAT((*y)[0], WithinAbs(0.005, 1e-9));
 }
 
+TEST_CASE("state_space starts from x0 and rhs integrates user ODE expressions") {
+  // Mass-spring-damper free decay from x0 = [1; 0]: x1' = x2, x2' = -4*x1 - 0.6*x2.
+  auto ss = make("control/state_space", {{"A", "0 1; -4 -0.6"},
+                                         {"B", "0; 1"},
+                                         {"C", "1 0"},
+                                         {"D", "0"},
+                                         {"x0", "1; 0"},
+                                         {"domain", "s"},
+                                         {"solver", "rk45"}});
+  auto rhs = make("control/rhs", {{"f", "x2; -4 * x1 - 0.6 * x2 + u"}, {"x0", "1 0"}, {"solver", "rk45"}});
+  REQUIRE(ss != nullptr);
+  REQUIRE(rhs != nullptr);
+  CHECK_FALSE(registry().find("control/rhs")->def.feedthrough);
+
+  const double dt = 0.02;
+  Values ss_last, rhs_last;
+  for (int k = 0; k < 50; ++k) {
+    ss_last = ss->step(Context{.t = k * dt, .dt = dt}, {});
+    rhs_last = rhs->step(Context{.t = k * dt, .dt = dt}, {});
+  }
+  const Vector* x_ss = get_vector(ss_last, "x");
+  const Vector* x_rhs = get_vector(rhs_last, "x");
+  REQUIRE(x_ss != nullptr);
+  REQUIRE(x_rhs != nullptr);
+  REQUIRE(x_ss->size() == 2);
+  REQUIRE(x_rhs->size() == 2);
+  CHECK_THAT((*x_ss)[0], WithinAbs((*x_rhs)[0], 1e-6));
+  CHECK_THAT((*x_ss)[1], WithinAbs((*x_rhs)[1], 1e-6));
+  CHECK((*x_ss)[0] < 0.8);
+
+  // 1D rhs using scalar alias `x` and `t`.
+  auto rhs1d = make("control/rhs", {{"f", "-x + u"}, {"x0", "2"}, {"solver", "rk4"}});
+  Values out1;
+  for (int k = 0; k < 100; ++k) out1 = rhs1d->step(Context{.t = k * 0.01, .dt = 0.01}, {{"u", Vector{1.0}}});
+  const Vector* x1 = get_vector(out1, "x");
+  REQUIRE(x1 != nullptr);
+  CHECK_THAT((*x1)[0], WithinAbs(1.0 + std::exp(-1.0), 1e-4));
+
+  CHECK_THROWS(make("control/state_space", {{"A", "1 0; 0 1"}, {"B", "1; 0"}, {"C", "1 0"}, {"x0", "1 2 3"}}));
+  CHECK_THROWS(make("control/rhs", {{"f", "bogus"}, {"x0", "0"}}));
+  CHECK_THROWS(make("control/rhs", {{"f", "x1; x2"}, {"x0", "1"}}));
+}
+
 TEST_CASE("bode gives -3.0103 dB and -45 degrees at the corner") {
   auto response = make("control/bode", {{"num", "1"}, {"den", "1 1"}, {"domain", "s"}});
   REQUIRE(response != nullptr);

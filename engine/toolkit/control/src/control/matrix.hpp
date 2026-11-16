@@ -380,4 +380,18 @@ inline StateSpace parse_state_space(const Values& params, const Config& config) 
   return out;
 }
 
+inline Vector parse_initial_state(const Values& params, const Config& config, std::size_t n) {
+  const std::string text = param_text(params, config, "x0", "");
+  if (trim(text).empty()) return Vector(n, 0.0);
+  const Matrix m = parse_matrix(text, "x0");
+  if (m.rows == 0 || m.cols == 0) return Vector(n, 0.0);
+  if (m.rows == 1 && m.cols == 1 && n != 1 && m(0, 0) == 0.0) return Vector(n, 0.0);
+  if (m.rows != 1 && m.cols != 1)
+    matrix_error("x0", "expected a vector of " + std::to_string(n) + " values, got " + shape_text(m));
+  if (m.values.size() != n)
+    matrix_error("x0", "expected " + std::to_string(n) + " values (one per state), got " +
+                           std::to_string(m.values.size()));
+  return m.values;
+}
+
 }  // namespace paperboat::toolkit::control

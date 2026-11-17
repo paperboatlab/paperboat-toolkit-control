@@ -25,3 +25,8 @@ tk::control::register_control(r);
 ```
 
 and import `"optimization"` and `"control"` in `descriptor.toml`.
+
+## Licence
+
+GNU General Public License version 3 (see [LICENSE](LICENSE)). Installed by the user and never
+bundled into a Paperboat release artifact.

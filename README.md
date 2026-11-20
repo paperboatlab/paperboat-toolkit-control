@@ -16,7 +16,7 @@ paperboat toolkit install optimization --repo https://github.com/paperboatlab/pa
 paperboat toolkit install control --repo https://github.com/paperboatlab/paperboat-toolkit-control.git
 ```
 
-Then in the backend's `main`:
+Then in the station's `main`:
 
 ```cpp
 tk::Registry r = tk::builtins();

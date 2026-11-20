@@ -8,7 +8,7 @@ The control toolkit links the optimization toolkit, so install both:
    paperboat toolkit install optimization --repo https://github.com/paperboatlab/paperboat-toolkit-optimization.git
    paperboat toolkit install control --repo https://github.com/paperboatlab/paperboat-toolkit-control.git
 
-A C++ backend registers them in its ``main``:
+A C++ station registers them in its ``main``:
 
 .. code-block:: cpp
 

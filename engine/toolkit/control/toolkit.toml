@@ -1,5 +1,5 @@
 # Optional control toolkit: the clock dynamics (pid, integrator, lag, delay) and per-step
-# MPC, LP and NMPC blocks. Its CMake links the optimization toolkit's Workspace; the backend
+# MPC, LP and NMPC blocks. Its CMake links the optimization toolkit's Workspace; the station
 # registers `control::register_control` when it links this package.
 name = "control"
 version = "0.1.1"
